@@ -24,11 +24,22 @@ def main(filename,argv):
 		elif opt in ("-i"):	
 			intervalDays = int(arg)
 
+	#TODO check if user didn't set a parameter
+	#TODO check the right format of the parameters (if -e contains url and port, if interval is number etc)		
 
 	print 'Starting with parameters\n* ElasticSeach Host='+esHost+'\n* Index Format='+indexFormat+'\n* Interval Days='+str(intervalDays)
 
+	#Setup a connection to elastic search
 
+	#Create a ES client
 
+	#List all indicies
+
+	#For all indicies get only that are matching to format
+
+	#Some how split them (or get the information from inside them) and check them based on date. If they are older from current date - interval , delete them
+
+	#Close connection and terminate
 
 
 
