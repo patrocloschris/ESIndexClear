@@ -1,6 +1,9 @@
 #!/usr/bin/python
 
 import sys,getopt,re
+from elasticsearch import Elasticsearch
+from elasticsearch.client import CatClient
+from elasticsearch.client import IndicesClient
 
 def eprint(msg):
 	sys.stderr.write(msg)
@@ -78,16 +81,23 @@ def main(filename,argv):
 
 
 	#Setup a connection to elastic search
+	es = Elasticsearch([esHost],sniff_on_start=True)
+	cat_client = CatClient(es)
+	index_client = IndicesClient(es)
 
+	#List all indices
+	indices = cat_client.indices(h='index').split('\n')
 
+	pat = re.compile(indexFormat)
+	for index in indices:
+		clean_index = index.strip()
+		res = pat.match(clean_index)
+		#For all indices get only that are matching to format
+		if res:
+			index_date=index_client.get(index=clean_index,feature='_settings')[clean_index]['settings']['index']['creation_date']
+			#compare dates , if true delete it
+			print clean_index
 
-	#Create a ES client
-
-	#List all indicies
-
-	#For all indicies get only that are matching to format
-
-	#Some how split them (or get the information from inside them) and check them based on date. If they are older from current date - interval , delete them
 
 	#Close connection and terminate
 
@@ -97,3 +107,8 @@ if __name__ == "__main__":
    main(sys.argv[0],sys.argv[1:])
 
 
+
+
+########## Pending ##############
+#TODO set timout to ES requests
+#TODO in parameter validation use buildin function for url validation
