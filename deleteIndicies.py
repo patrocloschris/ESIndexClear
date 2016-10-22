@@ -1,6 +1,6 @@
 #!/usr/bin/python
-
 import sys,getopt,re
+from datetime import datetime,timedelta
 from elasticsearch import Elasticsearch
 from elasticsearch.client import CatClient
 from elasticsearch.client import IndicesClient
@@ -79,7 +79,6 @@ def main(filename,argv):
 		print 'Starting with parameters:\n* ElasticSeach Host='+esHost+'\n* Index Format='+indexFormat+'\n* Interval Days='+str(intervalDays)
 		intervalDays = int(intervalDays)	
 
-
 	#Setup a connection to elastic search
 	es = Elasticsearch([esHost],sniff_on_start=True)
 	cat_client = CatClient(es)
@@ -89,17 +88,21 @@ def main(filename,argv):
 	indices = cat_client.indices(h='index').split('\n')
 
 	pat = re.compile(indexFormat)
+	back_interval_days = datetime.now() - timedelta(days=intervalDays)
+
+
 	for index in indices:
 		clean_index = index.strip()
 		res = pat.match(clean_index)
 		#For all indices get only that are matching to format
 		if res:
-			index_date=index_client.get(index=clean_index,feature='_settings')[clean_index]['settings']['index']['creation_date']
+			index_timestamp=index_client.get(index=clean_index,feature='_settings')[clean_index]['settings']['index']['creation_date']
+			#convert epoc timestamp to date
+			index_date = datetime.fromtimestamp(float(index_timestamp)/1000.0)
 			#compare dates , if true delete it
-			print clean_index
-
-
-	#Close connection and terminate
+			if index_date < back_interval_days:
+				print 'Deleting index => '+clean_index
+				index_client.delete(index=clean_index)
 
 
 
@@ -110,5 +113,6 @@ if __name__ == "__main__":
 
 
 ########## Pending ##############
-#TODO set timout to ES requests
+#TODO set timeout to ES requests
+#TODO add question ask if the user wants to delete that index and a force option to delete without asking
 #TODO in parameter validation use buildin function for url validation
