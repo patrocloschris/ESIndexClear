@@ -13,22 +13,17 @@ def check_parameters(esHost,indexFormat,intervalDays):
 	if esHost is None:
 		eprint('Elastic search host is empty')
 		return False
-	host_split = esHost.split(":")
-	if len(host_split)>2:
+	pat = re.compile(
+        r'^(?:http|ftp)s?://' # http:// or https://
+        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' #domain...
+        r'localhost|' #localhost...
+        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})' # ...or ip
+        r'(?::\d+)?' # optional port
+        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
+	res_match= pat.match(esHost) 
+	if not res_match:
 		eprint('Elastic search host is not a proper url')
 		return False
-	res_match= re.match(r'[a-z][a-z0-9]+',host_split[0],re.I | re.M) 
-	if not res_match:
-		pat = re.compile("^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-		res_match = pat.match(host_split[0])
-		if not res_match:
-			eprint('Elastic search host is not a valid domain')
-			return False
-	if len(host_split)==2:
-		res_match= re.match(r"^\d{1,5}$",host_split[1])	
-		if not res_match:
-			eprint('Elastic search port is not a valid number')
-			return False
 	# Check indexFormat
 	if indexFormat is None:
 		print 'Index Format is empty'
@@ -102,6 +97,7 @@ def main(filename,argv):
 			#compare dates , if true delete it
 			if index_date < back_interval_days:
 				print 'Deleting index => '+clean_index
+				#TODO check if deletion was success
 				index_client.delete(index=clean_index)
 
 
@@ -115,4 +111,3 @@ if __name__ == "__main__":
 ########## Pending ##############
 #TODO set timeout to ES requests
 #TODO add question ask if the user wants to delete that index and a force option to delete without asking
-#TODO in parameter validation use buildin function for url validation
